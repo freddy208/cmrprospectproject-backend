@@ -5,13 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DIRECT_URL")
 }
 
 // =============================
@@ -60,22 +60,22 @@ enum Status {
 // MODELS
 // =============================
 model User {
-  id             String      @id @default(uuid())
-  email          String      @unique
-  password       String
-  firstName      String
-  lastName       String
-  role           UserRole
-  country        String?     // Pour Country Manager et Sales Officer
-  isActive       Boolean     @default(true)
-  status         Status      @default(ACTIVE)
-  lastLogin      DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole
+  country   String? // Pour Country Manager et Sales Officer
+  isActive  Boolean   @default(true)
+  status    Status    @default(ACTIVE)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  createdProspects   Prospect[]   @relation("CreatedBy")
-  assignedProspects  Prospect[]   @relation("AssignedTo")
+  createdProspects   Prospect[]    @relation("CreatedBy")
+  assignedProspects  Prospect[]    @relation("AssignedTo")
   comments           Comment[]
   createdFormations  Formation[]
   createdSimulateurs Simulateur[]
@@ -88,47 +88,47 @@ model User {
 }
 
 model Prospect {
-  id                String         @id @default(uuid())
-  type              ProspectType
-  email             String
-  country           String
-  phone             String
-  whatsapp          String?
-  leadChannel       LeadChannel
-  serviceType       ServiceType
-  status            ProspectStatus @default(NOUVEAU)
-  genericStatus     Status         @default(ACTIVE)
-  nextCallDate      DateTime?
+  id            String         @id @default(uuid())
+  type          ProspectType
+  email         String
+  country       String
+  phone         String
+  whatsapp      String?
+  leadChannel   LeadChannel
+  serviceType   ServiceType
+  status        ProspectStatus @default(NOUVEAU)
+  genericStatus Status         @default(ACTIVE)
+  nextCallDate  DateTime?
 
   // Particulier
-  firstName         String?
-  lastName          String?
+  firstName String?
+  lastName  String?
 
   // Entreprise
-  companyName       String?
-  contactFirstName  String?
-  contactLastName   String?
+  companyName      String?
+  contactFirstName String?
+  contactLastName  String?
 
   // Relations services
-  formationId       String?
-  formation         Formation?     @relation(fields: [formationId], references: [id])
-  simulateurId      String?
-  simulateur        Simulateur?    @relation(fields: [simulateurId], references: [id])
+  formationId  String?
+  formation    Formation?  @relation(fields: [formationId], references: [id])
+  simulateurId String?
+  simulateur   Simulateur? @relation(fields: [simulateurId], references: [id])
 
   // Affectation
-  createdById       String
-  createdBy         User           @relation("CreatedBy", fields: [createdById], references: [id])
-  assignedToId      String?
-  assignedTo        User?          @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User    @relation("CreatedBy", fields: [createdById], references: [id])
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedTo", fields: [assignedToId], references: [id])
 
   // Timestamps
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  convertedAt       DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  convertedAt DateTime?
 
   // Relations
-  comments          Comment[]
-  interactions      Interaction[]
+  comments     Comment[]
+  interactions Interaction[]
 
   @@index([type])
   @@index([status])
@@ -139,14 +139,14 @@ model Prospect {
 }
 
 model Comment {
-  id          String   @id @default(uuid())
-  content     String   @db.Text
-  prospectId  String
-  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  status      Status   @default(ACTIVE)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  content    String   @db.Text
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  status     Status   @default(ACTIVE)
+  createdAt  DateTime @default(now())
 
   @@index([prospectId])
   @@index([userId])
@@ -154,17 +154,17 @@ model Comment {
 }
 
 model Interaction {
-  id          String   @id @default(uuid())
-  prospectId  String
-  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  type        String   // "call", "email", "meeting", "whatsapp"
-  channel     LeadChannel?
-  notes       String   @db.Text
-  duration    Int?     // en minutes
-  status      Status   @default(ACTIVE)
-  createdAt   DateTime @default(now())
+  id         String       @id @default(uuid())
+  prospectId String
+  prospect   Prospect     @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  type       String // "call", "email", "meeting", "whatsapp"
+  channel    LeadChannel?
+  notes      String       @db.Text
+  duration   Int? // en minutes
+  status     Status       @default(ACTIVE)
+  createdAt  DateTime     @default(now())
 
   @@index([prospectId])
   @@index([userId])
@@ -187,17 +187,16 @@ model Formation {
 }
 
 model Simulateur {
-  id          String     @id @default(uuid())
-  name        String
+  id           String     @id @default(uuid())
+  name         String
   monthlyPrice Float
-  description String     @db.Text
-  createdById String
-  createdBy   User       @relation(fields: [createdById], references: [id])
-  status      Status     @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  prospects   Prospect[]
+  description  String     @db.Text
+  createdById  String
+  createdBy    User       @relation(fields: [createdById], references: [id])
+  status       Status     @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  prospects    Prospect[]
 
   @@index([name])
 }
-
