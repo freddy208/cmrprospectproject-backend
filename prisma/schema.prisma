@@ -11,7 +11,7 @@ model User {
   id                 String        @id @default(uuid())
   email              String        @unique
   password           String
-  firstName          String
+  firstName          String?
   lastName           String
   role               UserRole
   country            String?
@@ -20,6 +20,8 @@ model User {
   lastLogin          DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  resetPasswordToken String? 
+  resetPasswordExpires DateTime?
   comments           Comment[]
   createdFormations  Formation[]
   interactions       Interaction[]
@@ -91,7 +93,7 @@ model Interaction {
   id         String       @id @default(uuid())
   prospectId String
   userId     String
-  type       String
+  type       String?
   channel    LeadChannel?
   notes      String
   duration   Int?
@@ -110,6 +112,7 @@ model Formation {
   name        String
   price       Float
   description String
+  country     String
   createdById String
   status      Status     @default(ACTIVE)
   createdAt   DateTime   @default(now())
@@ -125,10 +128,12 @@ model Simulateur {
   name         String
   monthlyPrice Float
   description  String
+  country      String
   createdById  String
   status       Status     @default(ACTIVE)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
   prospects    Prospect[]
   createdBy    User       @relation(fields: [createdById], references: [id])
 
@@ -172,4 +177,12 @@ enum Status {
   ACTIVE
   INACTIVE
   DELETED
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  role      UserRole
+  module    String   // ex: "prospect", "formation", "simulateur"
+  action    String   // ex: "create", "read", "update", "delete"
+  createdAt DateTime @default(now())
 }
