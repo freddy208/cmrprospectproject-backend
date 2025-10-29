@@ -8,26 +8,27 @@ datasource db {
 }
 
 model User {
-  id                 String        @id @default(uuid())
-  email              String        @unique
-  password           String
-  firstName          String?
-  lastName           String
-  role               UserRole
-  country            String?
-  isActive           Boolean       @default(true)
-  status             Status        @default(ACTIVE)
-  lastLogin          DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  resetPasswordToken String? 
+  id                   String        @id @default(uuid())
+  email                String        @unique
+  password             String
+  firstName            String?
+  lastName             String
+  role                 UserRole
+  country              String?
+  refreshToken         String? // <-- nouveau
+  isActive             Boolean       @default(true)
+  status               Status        @default(ACTIVE)
+  lastLogin            DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  resetPasswordToken   String?
   resetPasswordExpires DateTime?
-  comments           Comment[]
-  createdFormations  Formation[]
-  interactions       Interaction[]
-  assignedProspects  Prospect[]    @relation("AssignedTo")
-  createdProspects   Prospect[]    @relation("CreatedBy")
-  createdSimulateurs Simulateur[]
+  comments             Comment[]
+  createdFormations    Formation[]
+  interactions         Interaction[]
+  assignedProspects    Prospect[]    @relation("AssignedTo")
+  createdProspects     Prospect[]    @relation("CreatedBy")
+  createdSimulateurs   Simulateur[]
 
   @@index([email])
   @@index([role])
@@ -124,18 +125,18 @@ model Formation {
 }
 
 model Simulateur {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
   monthlyPrice Float
   description  String
   country      String
   createdById  String
-  status       Status     @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  status       Status   @default(ACTIVE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  prospects    Prospect[]
-  createdBy    User       @relation(fields: [createdById], references: [id])
+  prospects Prospect[]
+  createdBy User       @relation(fields: [createdById], references: [id])
 
   @@index([name])
 }
@@ -182,7 +183,7 @@ enum Status {
 model Permission {
   id        String   @id @default(uuid())
   role      UserRole
-  module    String   // ex: "prospect", "formation", "simulateur"
-  action    String   // ex: "create", "read", "update", "delete"
+  module    String // ex: "prospect", "formation", "simulateur"
+  action    String // ex: "create", "read", "update", "delete"
   createdAt DateTime @default(now())
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable no-unused-vars */
 import {
   Injectable,
@@ -20,8 +21,7 @@ export class AuthService {
   // Login
   async login(dto: LoginDto) {
     const user = await prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user)
-      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    if (!user) throw new UnauthorizedException('Email ou mot de passe incorrect');
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid)
@@ -31,14 +31,26 @@ export class AuthService {
       throw new UnauthorizedException('Compte inactif ou supprimé');
     }
 
+    // Générer access & refresh token
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, role: user.role },
+      { expiresIn: '15m' }
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id },
+      { expiresIn: '7d' }
+    );
+
+    // Stocker le refresh token hashé dans la DB
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLogin: new Date() },
+      data: { refreshToken: hashedRefreshToken, lastLogin: new Date() },
     });
 
-    const token = this.jwtService.sign({ sub: user.id, role: user.role });
     return {
-      accessToken: token,
+      accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -46,6 +58,39 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  // Refresh token
+  async refreshTokens(userId: string, token: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.refreshToken)
+      throw new UnauthorizedException('Utilisateur non autorisé');
+
+    const isValid = await bcrypt.compare(token, user.refreshToken);
+    if (!isValid) throw new UnauthorizedException('Refresh token invalide');
+
+    // Générer de nouveaux tokens
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, role: user.role },
+      { expiresIn: '15m' }
+    );
+    const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  // Logout
+  async logout(userId: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
   }
 
   // Forgot password
@@ -96,4 +141,13 @@ export class AuthService {
 
     return { message: 'Mot de passe réinitialisé avec succès' };
   }
+  async refreshTokensUsingRawToken(token: string) {
+    // Décoder le token sans vérification complète (decode)
+    const payload: any = this.jwtService.decode(token);
+    if (!payload || !payload.sub) throw new UnauthorizedException('Token invalide');
+
+    // Appel à la méthode existante qui valide et renvoie les tokens
+    return this.refreshTokens(payload.sub, token);
+  }
+
 }

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { Controller, Post, Body, Res, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpCode, Req, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -12,19 +12,65 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  @HttpCode(200)
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: express.Response) {
-    const { accessToken, user } = await this.authService.login(dto);
-    // Mettre le token dans un cookie sécurisé
-    res.cookie('token', accessToken, {
+    const { accessToken, refreshToken, user } = await this.authService.login(dto);
+
+    // Cookies sécurisés
+    res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 1 jour
+      maxAge: 15 * 60 * 1000, // 15 min
     });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+    });
+
     return { user };
   }
 
+  @Post('refresh')
+  async refresh(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response
+  ) {
+    const token = req.cookies['refreshToken'];
+    if (!token) throw new UnauthorizedException('Refresh token manquant');
+
+    // Appel à AuthService pour gérer le refresh
+    const tokens = await this.authService.refreshTokensUsingRawToken(token);
+
+    // Mettre à jour les cookies
+    res.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000,
+    });
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return { message: 'Tokens renouvelés' };
+  }
+
+
+  @Post('logout')
+  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+    const token = req.cookies['refreshToken'];
+    if (!token) throw new UnauthorizedException('Refresh token manquant');
+
+    const payload: any = this.authService.refreshTokensUsingRawToken(token);
+    await this.authService.logout(payload.sub);
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+
+    return { message: 'Déconnecté avec succès' };
+  }
+  
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
