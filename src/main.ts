@@ -24,8 +24,8 @@ async function bootstrap() {
   // ✅ Configuration CORS (indispensable pour cookies + frontend)
   app.enableCors({
     origin: [
-      'http://localhost:5173', // ton frontend local (Vite/React)
-      'https://cmrprospect.vercel.app', // ton futur domaine de prod
+      'https://cmrprospect.vercel.app',
+      'http://localhost:3000', // ton futur domaine de prod
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
