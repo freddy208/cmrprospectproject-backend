@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Injectable,
   NotFoundException,
@@ -84,5 +85,36 @@ export class UsersService {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
     return user;
+  }
+  async getStats(userId: string) {
+    // Vérifier que l'utilisateur existe
+    const userExists = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) throw new NotFoundException('Utilisateur non trouvé');
+
+    // $transaction pour exécuter toutes les requêtes en une seule fois
+    const [
+      prospectsCreated,
+      prospectsAssigned,
+      formationsCreated,
+      simulateursCreated,
+      commentsCreated,
+      interactionsCreated,
+    ] = await prisma.$transaction([
+      prisma.prospect.count({ where: { createdById: userId, genericStatus: 'ACTIVE' } }),
+      prisma.prospect.count({ where: { assignedToId: userId, genericStatus: 'ACTIVE' } }),
+      prisma.formation.count({ where: { createdById: userId, status: 'ACTIVE' } }),
+      prisma.simulateur.count({ where: { createdById: userId, status: 'ACTIVE' } }),
+      prisma.comment.count({ where: { userId, status: 'ACTIVE' } }),
+      prisma.interaction.count({ where: { userId, status: 'ACTIVE' } }),
+    ]);
+
+    return {
+      prospectsCreated,
+      prospectsAssigned,
+      formationsCreated,
+      simulateursCreated,
+      commentsCreated,
+      interactionsCreated,
+    };
   }
 }

@@ -53,4 +53,9 @@ export class UsersController {
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
+  @Get(':id/stats')
+  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
+  async getUserStats(@Param('id') id: string) {
+    return this.usersService.getStats(id);
+  }
 }
