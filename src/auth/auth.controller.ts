@@ -47,12 +47,18 @@ export class AuthController {
     res.cookie('accessToken', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 3600000,
+      sameSite: 'none',
+      path: '/',
+      partitioned: true,
     });
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'none',
+      path: '/',
+      partitioned: true,
     });
 
     return { message: 'Tokens renouvelés' };

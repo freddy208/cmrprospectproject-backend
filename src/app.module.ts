@@ -8,6 +8,7 @@ import { InteractionModule } from './interaction/interaction.module';
 import { FormationModule } from './formation/formation.module';
 import { SimulateurModule } from './simulateur/simulateur.module';
 import { ConfigModule } from '@nestjs/config';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
     InteractionModule,
     FormationModule,
     SimulateurModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
