@@ -24,6 +24,7 @@ export class AuthController {
       maxAge: 15 * 60 * 1000, // 15 min
       sameSite: 'none',
       path: '/',
+      partitioned: true, // ✅ CRITIQUE : doit être sur tous les cookies
     });
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -31,6 +32,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
       sameSite: 'none',
       path: '/',
+      partitioned: true, // ✅ CRITIQUE : doit être sur tous les cookies
     });
 
     return { user };
@@ -54,6 +56,7 @@ export class AuthController {
       maxAge: 3600000,
       sameSite: 'none',
       path: '/',
+      partitioned: true, // ✅ CRITIQUE : doit être sur tous les cookies
     });
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
@@ -61,6 +64,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       sameSite: 'none',
       path: '/',
+      partitioned: true, // ✅ CRITIQUE : doit être sur tous les cookies
     });
 
     return { message: 'Tokens renouvelés' };
