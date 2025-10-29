@@ -1,11 +1,13 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { Controller, Post, Body, Res, HttpCode, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpCode, Req, UnauthorizedException, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import express from 'express';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -79,5 +81,17 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@CurrentUser() user: any) {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      country: user.country,
+    };
   }
 }
