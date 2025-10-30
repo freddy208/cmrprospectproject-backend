@@ -5,22 +5,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { AuthorizationService } from 'src/common/authorization/authorization.service';
 import { CreateSimulateurDto } from './dto/create-simulateur.dto';
 import { UpdateSimulateurDto } from './dto/update-simulateur.dto';
 import { FilterSimulateurDto } from './dto/filter-simulateur.dto';
-import { User } from '@prisma/client';
+import { UserWithRole } from 'src/user/types'; // <--- On importe notre type propre
 
 @Injectable()
 export class SimulateurService {
-  constructor(
-    private prisma: PrismaService,
-    private authorizationService: AuthorizationService,
-  ) {}
+  constructor(private prisma: PrismaService) {} // <--- Plus besoin d'AuthorizationService
 
-  // Create (DG + Country Manager)
-  async create(dto: CreateSimulateurDto, user: User) {
-    if (!this.authorizationService.canCreateSimulateur(user)) {
+  async create(dto: CreateSimulateurDto, user: UserWithRole) {
+    // Seuls DG et COUNTRY_MANAGER peuvent créer
+    if (
+      user.role.name !== 'DIRECTEUR_GENERAL' &&
+      user.role.name !== 'COUNTRY_MANAGER'
+    ) {
       throw new ForbiddenException(
         'Vous n’êtes pas autorisé à créer un simulateur',
       );
@@ -28,23 +27,20 @@ export class SimulateurService {
 
     return this.prisma.simulateur.create({
       data: {
-        name: dto.name,
-        monthlyPrice: dto.monthlyPrice,
-        description: dto.description,
-        country: dto.country,
+        ...dto,
         createdById: user.id,
       },
     });
   }
 
-  // Find all (applique scope country si nécessaire)
-  async findAll(filter: FilterSimulateurDto, user: User) {
+  async findAll(filter: FilterSimulateurDto, user: UserWithRole) {
     const where: any = { status: 'ACTIVE' };
 
     // Country Manager voit seulement les simulateurs de son pays
-    if (this.authorizationService.isCountryManager(user)) {
+    if (user.role.name === 'COUNTRY_MANAGER') {
       where.country = user.country;
     }
+    // Le Sales Officer n'a pas la permission 'simulateurs:read', il ne passera donc pas le guard.
 
     if (filter.search) {
       where.name = { contains: filter.search, mode: 'insensitive' };
@@ -63,25 +59,23 @@ export class SimulateurService {
     });
   }
 
-  // Find one with access check
-  async findOne(id: string, user: User) {
+  async findOne(id: string, user: UserWithRole) {
     const sim = await this.prisma.simulateur.findUnique({ where: { id } });
     if (!sim) throw new NotFoundException('Simulateur introuvable');
 
-    if (!this.authorizationService.canAccessSimulateur(user, sim)) {
+    // Le DG voit tout. Le CM ne voit que les simulateurs de son pays.
+    if (
+      user.role.name !== 'DIRECTEUR_GENERAL' &&
+      sim.country !== user.country
+    ) {
       throw new ForbiddenException('Accès non autorisé');
     }
     return sim;
   }
 
-  // Update
-  async update(id: string, dto: UpdateSimulateurDto, user: User) {
-    const sim = await this.prisma.simulateur.findUnique({ where: { id } });
-    if (!sim) throw new NotFoundException('Simulateur introuvable');
-
-    if (!this.authorizationService.canUpdateSimulateur(user, sim)) {
-      throw new ForbiddenException('Vous ne pouvez pas modifier ce simulateur');
-    }
+  async update(id: string, dto: UpdateSimulateurDto, user: UserWithRole) {
+    // On réutilise la logique de findOne pour vérifier l'accès
+    await this.findOne(id, user); // Lèvera une exception si non autorisé
 
     return this.prisma.simulateur.update({
       where: { id },
@@ -89,22 +83,20 @@ export class SimulateurService {
     });
   }
 
-  // Soft delete
-  async remove(id: string, user: User) {
-    const sim = await this.prisma.simulateur.findUnique({ where: { id } });
-    if (!sim) throw new NotFoundException('Simulateur introuvable');
+  async remove(id: string, user: UserWithRole) {
+    // On réutilise la logique de findOne pour vérifier l'accès
+    await this.findOne(id, user); // Lèvera une exception si non autorisé
 
-    if (!this.authorizationService.canDeleteSimulateur(user, sim)) {
-      throw new ForbiddenException('Suppression non autorisée');
-    }
-
+    // Soft delete
     return this.prisma.simulateur.update({
       where: { id },
       data: { status: 'DELETED' },
     });
   }
 
-  // Stats: count by country
+  // --- Les méthodes de statistiques n'ont pas besoin de changer ---
+  // Elles sont protégées au niveau du contrôleur par les permissions.
+
   async countByCountry() {
     return this.prisma.simulateur.groupBy({
       by: ['country'],
@@ -112,7 +104,6 @@ export class SimulateurService {
     });
   }
 
-  // Stats: count by manager (createdById)
   async countByManager() {
     return this.prisma.simulateur.groupBy({
       by: ['createdById'],
@@ -120,12 +111,10 @@ export class SimulateurService {
     });
   }
 
-  // Total count
   async totalCount() {
     return this.prisma.simulateur.count();
   }
 
-  // Count prospects per simulateur (global)
   async countProspectsBySimulateur() {
     const sims = await this.prisma.simulateur.findMany({
       select: {
@@ -145,7 +134,6 @@ export class SimulateurService {
     }));
   }
 
-  // Count prospects per simulateur filtered by country
   async countProspectsBySimulateurAndCountry(country: string) {
     const sims = await this.prisma.simulateur.findMany({
       where: { country },

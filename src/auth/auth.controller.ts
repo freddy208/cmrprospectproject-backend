@@ -8,6 +8,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import express from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import * as types from 'src/user/types';
 
 @Controller('auth')
 export class AuthController {
@@ -159,21 +160,19 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getProfile(
-    @CurrentUser() user: any,
+    @CurrentUser() user: types.UserWithRole, // <--- On utilise notre type pour la clarté
     @Req() req: express.Request
   ) {
-    console.log('🟢 ==================== DEBUT /auth/me ====================');
-    console.log('🟢 Cookies reçus:', req.cookies);
-    console.log('🟢 accessToken présent:', req.cookies?.accessToken ? 'OUI' : 'NON');
-    console.log('🟢 User après guard:', user ? `${user.firstName} ${user.lastName}` : 'AUCUN');
-    console.log('🟢 ==================== FIN /auth/me ====================');
-
+    // Le décorateur @CurrentUser et le JwtAuthGuard garantissent que `user` a son rôle chargé.
+    // On retourne une réponse propre et explicite.
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      // --- CORRECTION ---
+      // On retourne explicitement le nom du rôle et l'objet rôle complet si besoin
+      role: user.role.name, 
       country: user.country,
     };
   }

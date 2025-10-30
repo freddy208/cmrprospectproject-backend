@@ -3,10 +3,10 @@ import { FormationService } from './formation.service';
 import { FormationController } from './formation.controller';
 import { PrismaService } from '../prisma.service';
 import { AuthModule } from '../auth/auth.module';
-import { AuthorizationModule } from '../common/authorization/authorization.module';
+// On n'importe plus AuthorizationModule !
 
 @Module({
-  imports: [AuthModule, AuthorizationModule],
+  imports: [AuthModule], // <--- Seul AuthModule est nécessaire
   controllers: [FormationController],
   providers: [FormationService, PrismaService],
 })

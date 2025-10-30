@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import {
   Injectable,
@@ -8,11 +9,13 @@ import { prisma } from '../config/database.config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FilterUserDto } from './dto/filter-user.dto';
+import { UserWithRole } from './types'; // <--- On importe notre nouveau type
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  // Créer un utilisateur
+  // ... (create, update, remove restent identiques)
+  
   async create(dto: CreateUserDto) {
     const existingUser = await prisma.user.findUnique({
       where: { email: dto.email },
@@ -29,7 +32,6 @@ export class UsersService {
     });
   }
 
-  // Mettre à jour un utilisateur
   async update(id: string, dto: UpdateUserDto) {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
@@ -44,7 +46,6 @@ export class UsersService {
     });
   }
 
-  // Soft delete d'un utilisateur
   async remove(id: string) {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
@@ -55,12 +56,26 @@ export class UsersService {
     });
   }
 
-  // Liste des utilisateurs avec filtres et recherche
-  async findAll(filter: FilterUserDto) {
+  // --- MÉTHODES AVEC FILTRAGE ---
+
+  // Liste des utilisateurs avec filtres et recherche ET filtrage par rôle
+  async findAll(filter: FilterUserDto, user: UserWithRole) { // <--- On utilise le nouveau type
     const { search, role, country, status } = filter;
+
+    let whereClause: any = {};
+
+    // Maintenant, TypeScript sait que `user.role` existe !
+    if (user.role.name === 'DIRECTEUR_GENERAL') {
+      // Le DG voit tout, pas de filtre supplémentaire
+    } else if (user.role.name === 'COUNTRY_MANAGER') {
+      whereClause.country = user.country;
+    } else if (user.role.name === 'SALES_OFFICER') {
+      whereClause.id = user.id;
+    }
 
     return prisma.user.findMany({
       where: {
+        ...whereClause,
         AND: [
           search
             ? {
@@ -71,7 +86,7 @@ export class UsersService {
                 ],
               }
             : {},
-          role ? { role } : {},
+          role ? { role: { name: role } } : {},
           country ? { country } : {},
           status ? { status } : {},
         ],
@@ -80,18 +95,31 @@ export class UsersService {
     });
   }
 
-  // Récupérer un utilisateur par id
-  async findOne(id: string) {
-    const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    return user;
-  }
-  async getStats(userId: string) {
-    // Vérifier que l'utilisateur existe
-    const userExists = await prisma.user.findUnique({ where: { id: userId } });
-    if (!userExists) throw new NotFoundException('Utilisateur non trouvé');
+  // Récupérer un utilisateur par id, avec vérification des droits
+  async findOne(id: string, user: UserWithRole) { // <--- On utilise le nouveau type
+    const targetUser = await prisma.user.findUnique({ 
+      where: { id },
+      include: { role: true }
+    });
 
-    // $transaction pour exécuter toutes les requêtes en une seule fois
+    if (!targetUser) throw new NotFoundException('Utilisateur non trouvé');
+
+    if (user.role.name === 'DIRECTEUR_GENERAL') {
+      return targetUser;
+    }
+    if (user.role.name === 'COUNTRY_MANAGER' && targetUser.country === user.country) {
+      return targetUser;
+    }
+    if (user.role.name === 'SALES_OFFICER' && targetUser.id === user.id) {
+      return targetUser;
+    }
+
+    throw new NotFoundException('Utilisateur non trouvé ou accès non autorisé');
+  }
+
+  async getStats(userId: string, user: UserWithRole) { // <--- On utilise le nouveau type
+    const targetUser = await this.findOne(userId, user);
+
     const [
       prospectsCreated,
       prospectsAssigned,

@@ -9,6 +9,8 @@ import { FormationModule } from './formation/formation.module';
 import { SimulateurModule } from './simulateur/simulateur.module';
 import { ConfigModule } from '@nestjs/config';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AdministrationModule } from './administration/administration.module';
+import { ProspectModule } from './prospect/prospect.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     FormationModule,
     SimulateurModule,
     DashboardModule,
+    AdministrationModule,
+    ProspectModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,49 +10,57 @@ import {
   Body,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
-
-import { AuthGuard } from '@nestjs/passport';
 import { InteractionsService } from './interaction.service';
 import { CreateInteractionDto } from './dto/create-interaction.dto';
 import { UpdateInteractionDto } from './dto/update-interaction.dto';
 import { FilterInteractionDto } from './dto/filter-interaction.dto';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // <--- Le bon guard d'auth
+import { PermissionsGuard } from '../common/guards/permissions.guard'; // <--- Notre nouveau guard
+import { Permissions } from '../common/decorators/permissions.decorator'; // <--- Notre nouveau décorateur
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import * as client from '@prisma/client';
+import * as types from 'src/user/types'; // <--- Notre type propre
 
+@UseGuards(JwtAuthGuard, PermissionsGuard) // <--- Gardes mis à jour
 @Controller('interactions')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class InteractionsController {
   constructor(private readonly interactionsService: InteractionsService) {}
 
   @Post()
-  create(@Body() dto: CreateInteractionDto, @CurrentUser() user: client.User) {
+  @Permissions('interactions:create') // <--- Permission requise
+  create(@Body() dto: CreateInteractionDto, @CurrentUser() user: types.UserWithRole) {
     return this.interactionsService.create(user, dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateInteractionDto, @CurrentUser() user: client.User) {
+  @Permissions('interactions:update') // <--- Permission requise
+  update(@Param('id') id: string, @Body() dto: UpdateInteractionDto, @CurrentUser() user: types.UserWithRole) {
     return this.interactionsService.update(user, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: client.User) {
+  @Permissions('interactions:delete') // <--- Permission requise
+  remove(@Param('id') id: string, @CurrentUser() user: types.UserWithRole) {
     return this.interactionsService.remove(user, id);
   }
 
   @Get()
-  findAll(@Query() filterDto: FilterInteractionDto) {
-    return this.interactionsService.findAll(filterDto);
+  @Permissions('interactions:read') // <--- Permission requise
+  findAll(@Query() filterDto: FilterInteractionDto, @CurrentUser() user: types.UserWithRole) {
+    // On passe l'utilisateur au service pour le filtrage
+    return this.interactionsService.findAll(filterDto, user);
   }
 
   @Get('count/prospect/:prospectId')
-  countByProspect(@Param('prospectId') prospectId: string) {
-    return this.interactionsService.countByProspect(prospectId);
+  @Permissions('interactions:read') // <--- Permission requise
+  countByProspect(@Param('prospectId') prospectId: string, @CurrentUser() user: types.UserWithRole) {
+    return this.interactionsService.countByProspect(prospectId, user);
   }
 
   @Get('count/user/:userId')
-  countByUser(@Param('userId') userId: string) {
-    return this.interactionsService.countByUser(userId);
+  @Permissions('interactions:read') // <--- Permission requise
+  countByUser(@Param('userId') userId: string, @CurrentUser() user: types.UserWithRole) {
+    return this.interactionsService.countByUser(userId, user);
   }
 }

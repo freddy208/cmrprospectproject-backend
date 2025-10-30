@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { SimulateurController } from './simulateur.controller';
 import { SimulateurService } from './simulateur.service';
 import { AuthModule } from '../auth/auth.module';
-import { AuthorizationModule } from '../common/authorization/authorization.module';
 import { PrismaService } from '../prisma.service';
+// On n'importe plus AuthorizationModule !
 
 @Module({
-  imports: [AuthModule, AuthorizationModule],
+  imports: [AuthModule], // <--- Seul AuthModule est nécessaire
   controllers: [SimulateurController],
   providers: [SimulateurService, PrismaService],
 })

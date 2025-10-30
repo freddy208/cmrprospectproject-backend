@@ -1,12 +1,12 @@
+// src/user/dto/create-user.dto.ts
 import {
   IsEmail,
   IsNotEmpty,
   MinLength,
-  IsEnum,
-  IsOptional,
   IsString,
+  IsUUID,
+  IsOptional,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
   @IsEmail()
@@ -17,14 +17,17 @@ export class CreateUserDto {
   password: string;
 
   @IsOptional()
+  @IsString()
   firstName?: string;
 
   @IsString()
   lastName: string;
 
-  @IsEnum(UserRole)
-  role: UserRole;
+  // --- CHANGEMENT CRUCIAL ---
+  @IsUUID()
+  roleId: string; // On utilise l'UUID du rôle, plus l'enum
 
   @IsOptional()
-  country: string;
+  @IsString()
+  country?: string;
 }

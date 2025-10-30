@@ -1,5 +1,7 @@
-import { IsEmail, IsOptional, MinLength, IsEnum } from 'class-validator';
-import { UserRole, Status } from '@prisma/client';
+/* eslint-disable prettier/prettier */
+// src/user/dto/update-user.dto.ts
+import { IsEmail, IsOptional, MinLength, IsString, IsUUID, IsEnum } from 'class-validator';
+import { Status } from '@prisma/client';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -11,17 +13,21 @@ export class UpdateUserDto {
   password?: string;
 
   @IsOptional()
+  @IsString()
   firstName?: string;
 
   @IsOptional()
+  @IsString()
   lastName?: string;
 
+  // --- CHANGEMENT CRUCIAL ---
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @IsUUID()
+  roleId?: string; // On utilise l'UUID du rôle
 
   @IsOptional()
-  country: string;
+  @IsString()
+  country?: string;
 
   @IsOptional()
   @IsEnum(Status)

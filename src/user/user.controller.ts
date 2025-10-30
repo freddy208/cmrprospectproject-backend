@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable no-unused-vars */
 import {
   Controller,
@@ -9,53 +10,60 @@ import {
   Body,
   Query,
   UseGuards,
+  Request, // <--- Important pour récupérer l'utilisateur
 } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FilterUserDto } from './dto/filter-user.dto';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { RolesGuard } from '../common/guards/roles.guard';
-import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // <--- Utiliser le bon guard
+import { PermissionsGuard } from '../common/guards/permissions.guard'; // <--- Nouveau guard
+import { Permissions } from '../common/decorators/permissions.decorator'; // <--- Nouveau décorateur
 
 @Controller('users')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard) // <--- Gardes mis à jour
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Post()
-  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
+  @Permissions('users:create') // <--- Permission requise
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
   @Put(':id')
-  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
+  @Permissions('users:update') // <--- Permission requise
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.DIRECTEUR_GENERAL)
+  @Permissions('users:delete') // <--- Permission requise
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 
   @Get()
-  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
-  findAll(@Query() filter: FilterUserDto) {
-    return this.usersService.findAll(filter);
+  @Permissions('users:read') // <--- Permission requise
+  findAll(@Query() filter: FilterUserDto, @Request() req) { // <--- On récupère la requête
+    return this.usersService.findAll(filter, req.user); // <--- On passe l'utilisateur au service
+  }
+
+  @Get('me') // <--- NOUVELLE ROUTE UTILE
+  @Permissions('users:read:own') // <--- Permission pour voir son propre profil
+  getMyProfile(@Request() req) {
+    return this.usersService.findOne(req.user.id, req.user);
   }
 
   @Get(':id')
-  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @Permissions('users:read') // <--- Permission requise
+  findOne(@Param('id') id: string, @Request() req) { // <--- On récupère la requête
+    return this.usersService.findOne(id, req.user); // <--- On passe l'utilisateur au service
   }
+
   @Get(':id/stats')
-  @Roles(UserRole.DIRECTEUR_GENERAL, UserRole.COUNTRY_MANAGER)
-  async getUserStats(@Param('id') id: string) {
-    return this.usersService.getStats(id);
+  @Permissions('users:read') // <--- Permission requise (peut être affinée plus tard)
+  getUserStats(@Param('id') id: string, @Request() req) {
+    return this.usersService.getStats(id, req.user);
   }
 }

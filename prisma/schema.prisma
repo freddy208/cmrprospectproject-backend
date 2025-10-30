@@ -7,15 +7,42 @@ datasource db {
   url      = env("DIRECT_URL")
 }
 
+// --- MODÈLES NOUVEAUX ---
+
+// NOUVEAU: Modèle pour les rôles (ex: Directeur Général)
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // "DIRECTEUR_GENERAL", "COUNTRY_MANAGER", etc.
+  description String?
+  permissions Permission[] // Relation many-to-many avec Permission
+  users       User[] // Relation one-to-many avec User
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// NOUVEAU: Modèle pour les permissions (ex: prospect:read)
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // "prospect:read", "user:create", etc.
+  description String?
+  roles       Role[] // Relation many-to-many avec Role
+  createdAt   DateTime @default(now())
+}
+
+// --- MODÈLES MODIFIÉS ---
+
+// MODIFIÉ: Le modèle User est maintenant lié au modèle Role
 model User {
   id                   String        @id @default(uuid())
   email                String        @unique
   password             String
   firstName            String?
   lastName             String
-  role                 UserRole
+  // --- CHANGEMENTS ICI ---
+  roleId               String // Clé étrangère vers le modèle Role
+  role                 Role          @relation(fields: [roleId], references: [id])
   country              String?
-  refreshToken         String? // <-- nouveau
+  refreshToken         String?
   isActive             Boolean       @default(true)
   status               Status        @default(ACTIVE)
   lastLogin            DateTime?
@@ -31,10 +58,12 @@ model User {
   createdSimulateurs   Simulateur[]
 
   @@index([email])
-  @@index([role])
+  @@index([roleId]) // Index sur la nouvelle clé étrangère
   @@index([country])
   @@index([status])
 }
+
+// --- MODÈLES EXISTANTS (NON MODIFIÉS) ---
 
 model Prospect {
   id               String         @id @default(uuid())
@@ -141,6 +170,10 @@ model Simulateur {
   @@index([name])
 }
 
+// --- ENUMS (NON MODIFIÉS) ---
+// NOTE: L'enum UserRole n'est plus utilisé directement dans la base de données,
+// mais il peut être utile de le garder dans votre code TypeScript pour la clarté.
+
 enum UserRole {
   DIRECTEUR_GENERAL
   COUNTRY_MANAGER
@@ -178,12 +211,4 @@ enum Status {
   ACTIVE
   INACTIVE
   DELETED
-}
-
-model Permission {
-  id        String   @id @default(uuid())
-  role      UserRole
-  module    String // ex: "prospect", "formation", "simulateur"
-  action    String // ex: "create", "read", "update", "delete"
-  createdAt DateTime @default(now())
 }

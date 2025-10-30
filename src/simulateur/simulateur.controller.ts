@@ -15,94 +15,78 @@ import { SimulateurService } from './simulateur.service';
 import { CreateSimulateurDto } from './dto/create-simulateur.dto';
 import { UpdateSimulateurDto } from './dto/update-simulateur.dto';
 import { FilterSimulateurDto } from './dto/filter-simulateur.dto';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // <--- Le bon guard d'auth
+import { PermissionsGuard } from '../common/guards/permissions.guard'; // <--- Notre nouveau guard
+import { Permissions } from '../common/decorators/permissions.decorator'; // <--- Notre nouveau décorateur
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import * as client from '@prisma/client';
-import { AuthGuard } from '@nestjs/passport';
+import * as types from 'src/user/types'; // <--- Notre type propre
 
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard) // <--- Gardes mis à jour
 @Controller('simulateurs')
 export class SimulateurController {
   constructor(private readonly simulateurService: SimulateurService) {}
 
-  // Create (DG + Country Manager)
   @Post()
-  @Roles(client.UserRole.DIRECTEUR_GENERAL, client.UserRole.COUNTRY_MANAGER)
-  create(@Body() dto: CreateSimulateurDto, @CurrentUser() user: client.User) {
+  @Permissions('simulateurs:create') // <--- Permission requise
+  create(@Body() dto: CreateSimulateurDto, @CurrentUser() user: types.UserWithRole) {
     return this.simulateurService.create(dto, user);
   }
 
-  // List / filter (DG voit tout, CM limité via service)
   @Get()
-  @Roles(
-    client.UserRole.DIRECTEUR_GENERAL,
-    client.UserRole.COUNTRY_MANAGER,
-    client.UserRole.SALES_OFFICER,
-  )
-  findAll(@Query() filter: FilterSimulateurDto, @CurrentUser() user: client.User) {
+  @Permissions('simulateurs:read') // <--- Permission requise
+  findAll(@Query() filter: FilterSimulateurDto, @CurrentUser() user: types.UserWithRole) {
     return this.simulateurService.findAll(filter, user);
   }
 
-  // Get one
   @Get(':id')
-  @Roles(
-    client.UserRole.DIRECTEUR_GENERAL,
-    client.UserRole.COUNTRY_MANAGER,
-    client.UserRole.SALES_OFFICER,
-  )
-  findOne(@Param('id') id: string, @CurrentUser() user: client.User) {
+  @Permissions('simulateurs:read') // <--- Permission requise
+  findOne(@Param('id') id: string, @CurrentUser() user: types.UserWithRole) {
     return this.simulateurService.findOne(id, user);
   }
 
-  // Update
   @Patch(':id')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL, client.UserRole.COUNTRY_MANAGER)
+  @Permissions('simulateurs:update') // <--- Permission requise
   update(
     @Param('id') id: string,
     @Body() dto: UpdateSimulateurDto,
-    @CurrentUser() user: client.User,
+    @CurrentUser() user: types.UserWithRole,
   ) {
     return this.simulateurService.update(id, dto, user);
   }
 
-  // Delete (soft)
   @Delete(':id')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL, client.UserRole.COUNTRY_MANAGER)
-  remove(@Param('id') id: string, @CurrentUser() user: client.User) {
+  @Permissions('simulateurs:delete') // <--- Permission requise
+  remove(@Param('id') id: string, @CurrentUser() user: types.UserWithRole) {
     return this.simulateurService.remove(id, user);
   }
 
-  // Stats endpoints
-  // Global (DG)
+  // --- Stats endpoints ---
   @Get('stats/by-country')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL)
+  @Permissions('simulateurs:read') // <--- Permission requise
   countByCountry() {
     return this.simulateurService.countByCountry();
   }
 
   @Get('stats/by-manager')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL)
+  @Permissions('simulateurs:read') // <--- Permission requise
   countByManager() {
     return this.simulateurService.countByManager();
   }
 
   @Get('stats/total')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL)
+  @Permissions('simulateurs:read') // <--- Permission requise
   totalCount() {
     return this.simulateurService.totalCount();
   }
 
-  // Prospects per simulateur (global DG)
   @Get('stats/prospects')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL)
+  @Permissions('simulateurs:read') // <--- Permission requise
   countProspectsBySimulateur() {
     return this.simulateurService.countProspectsBySimulateur();
   }
 
-  // Prospects per simulateur filtered by country (DG + CM)
   @Get('stats/prospects/:country')
-  @Roles(client.UserRole.DIRECTEUR_GENERAL, client.UserRole.COUNTRY_MANAGER)
+  @Permissions('simulateurs:read') // <--- Permission requise
   countProspectsBySimulateurAndCountry(@Param('country') country: string) {
     return this.simulateurService.countProspectsBySimulateurAndCountry(country);
   }

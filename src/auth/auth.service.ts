@@ -20,7 +20,13 @@ export class AuthService {
 
   // Login
   async login(dto: LoginDto) {
-    const user = await prisma.user.findUnique({ where: { email: dto.email } });
+    // --- CORRECTION CRUCIALE ---
+    // On doit charger la relation `role` pour y accéder plus tard
+    const user = await prisma.user.findUnique({ 
+      where: { email: dto.email },
+      include: { role: true } // <--- AJOUT ESSENTIEL
+    });
+    
     if (!user) throw new UnauthorizedException('Email ou mot de passe incorrect');
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
@@ -31,9 +37,10 @@ export class AuthService {
       throw new UnauthorizedException('Compte inactif ou supprimé');
     }
 
-    // Générer access & refresh token
+    // --- CORRECTION CRUCIALE ---
+    // Générer access & refresh token avec le NOM du rôle dans le payload
     const accessToken = this.jwtService.sign(
-      { sub: user.id, role: user.role },
+      { sub: user.id, role: user.role.name }, // <--- ON UTILISE user.role.name
       { expiresIn: '15m' }
     );
     const refreshToken = this.jwtService.sign(
@@ -55,23 +62,32 @@ export class AuthService {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
-        role: user.role,
+        // --- CORRECTION ---
+        // On retourne le nom du rôle pour que le frontend puisse l'utiliser facilement
+        role: user.role.name, 
       },
     };
   }
 
   // Refresh token
   async refreshTokens(userId: string, token: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    // --- CORRECTION CRUCIALE ---
+    // On charge aussi la relation `role` ici
+    const user = await prisma.user.findUnique({ 
+      where: { id: userId },
+      include: { role: true } // <--- AJOUT ESSENTIEL
+    });
+
     if (!user || !user.refreshToken)
       throw new UnauthorizedException('Utilisateur non autorisé');
 
     const isValid = await bcrypt.compare(token, user.refreshToken);
     if (!isValid) throw new UnauthorizedException('Refresh token invalide');
 
-    // Générer de nouveaux tokens
+    // --- CORRECTION CRUCIALE ---
+    // Générer de nouveaux tokens avec le nom du rôle
     const accessToken = this.jwtService.sign(
-      { sub: user.id, role: user.role },
+      { sub: user.id, role: user.role.name }, // <--- ON UTILISE user.role.name
       { expiresIn: '15m' }
     );
     const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
@@ -93,14 +109,14 @@ export class AuthService {
     });
   }
 
-  // Forgot password
+  // Forgot password (aucun changement nécessaire)
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await prisma.user.findUnique({ where: { email: dto.email } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     const resetToken = uuidv4();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // token valide 1h
+    expiresAt.setHours(expiresAt.getHours() + 1);
 
     await prisma.user.update({
       where: { id: user.id },
@@ -110,14 +126,13 @@ export class AuthService {
       },
     });
 
-    // Ici, envoyer un email avec le token (integration email à faire côté service)
     return {
       message:
         'Un email a été envoyé avec les instructions pour réinitialiser le mot de passe',
     };
   }
 
-  // Reset password
+  // Reset password (aucun changement nécessaire)
   async resetPassword(dto: ResetPasswordDto) {
     const user = await prisma.user.findFirst({
       where: {
@@ -141,13 +156,12 @@ export class AuthService {
 
     return { message: 'Mot de passe réinitialisé avec succès' };
   }
+
+  // Cette méthode appelle `refreshTokens`, donc elle sera automatiquement corrigée
   async refreshTokensUsingRawToken(token: string) {
-    // Décoder le token sans vérification complète (decode)
     const payload: any = this.jwtService.decode(token);
     if (!payload || !payload.sub) throw new UnauthorizedException('Token invalide');
 
-    // Appel à la méthode existante qui valide et renvoie les tokens
     return this.refreshTokens(payload.sub, token);
   }
-
 }
