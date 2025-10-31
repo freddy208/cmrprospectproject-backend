@@ -43,6 +43,23 @@ export class ProspectController {
     return this.prospectService.findAll(filter, user);
   }
 
+  @Get('/entreprises')
+  @Permissions('prospects:read')
+  findAllEntreprises(
+    @Query() filter: FilterProspectDto,
+    @CurrentUser() user: types.UserWithRole,
+  ) {
+    return this.prospectService.findAllEntreprises(filter, user);
+  }
+  @Get('/aboutis')
+  @Permissions('prospects:read')
+  findAllAboutis(
+    @Query() filter: FilterProspectDto,
+    @CurrentUser() user: types.UserWithRole,
+  ) {
+    return this.prospectService.findAllAboutis(filter, user);
+  }
+
   @Get(':id')
   @Permissions('prospects:read')
   findOne(@Param('id') id: string, @CurrentUser() user: types.UserWithRole) {

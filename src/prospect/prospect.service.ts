@@ -86,6 +86,86 @@ export class ProspectService {
       orderBy: { createdAt: 'desc' },
     });
   }
+  // nouvelle methodes 
+  async findAllEntreprises(filter: FilterProspectDto, user: UserWithRole) {
+    const where: any = { genericType: 'ENTREPRISE', generecStatus: 'ACTIVE' };
+
+    // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
+    if (user.role.name === 'SALES_OFFICER') {
+      where.assignedToId = user.id;
+    } else if (user.role.name === 'COUNTRY_MANAGER') {
+      where.country = user.country;
+    }
+    // Le DG voit tout (pas de filtre)
+
+    // Appliquer les filtres de recherche
+    if (filter.search) {
+      where.OR = [
+        { email: { contains: filter.search, mode: 'insensitive' } },
+        { firstName: { contains: filter.search, mode: 'insensitive' } },
+        { lastName: { contains: filter.search, mode: 'insensitive' } },
+        { companyName: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+    if (filter.country) where.country = filter.country;
+    if (filter.status) where.status = filter.status;
+    if (filter.serviceType) where.serviceType = filter.serviceType;
+    if (filter.leadChannel) where.leadChannel = filter.leadChannel;
+    if (filter.assignedToId) where.assignedToId = filter.assignedToId;
+
+    return this.prisma.prospect.findMany({
+      where,
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true, role: { select: { name: true } } } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        formation: { select: { id: true, name: true, price: true } },
+        simulateur: { select: { id: true, name: true, monthlyPrice: true } },
+        _count: { select: { comments: true, interactions: true } }, // Utile pour le frontend
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+  // nouvelle methodes 
+   // nouvelle methodes 
+  async findAllAboutis(filter: FilterProspectDto, user: UserWithRole) {
+    const where: any = { genericProspectStatus: 'CONVERTI', generecStatus: 'ACTIVE' };
+
+    // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
+    if (user.role.name === 'SALES_OFFICER') {
+      where.assignedToId = user.id;
+    } else if (user.role.name === 'COUNTRY_MANAGER') {
+      where.country = user.country;
+    }
+    // Le DG voit tout (pas de filtre)
+
+    // Appliquer les filtres de recherche
+    if (filter.search) {
+      where.OR = [
+        { email: { contains: filter.search, mode: 'insensitive' } },
+        { firstName: { contains: filter.search, mode: 'insensitive' } },
+        { lastName: { contains: filter.search, mode: 'insensitive' } },
+        { companyName: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+    if (filter.country) where.country = filter.country;
+    if (filter.status) where.status = filter.status;
+    if (filter.serviceType) where.serviceType = filter.serviceType;
+    if (filter.leadChannel) where.leadChannel = filter.leadChannel;
+    if (filter.assignedToId) where.assignedToId = filter.assignedToId;
+
+    return this.prisma.prospect.findMany({
+      where,
+      include: {
+        assignedTo: { select: { id: true, firstName: true, lastName: true, role: { select: { name: true } } } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        formation: { select: { id: true, name: true, price: true } },
+        simulateur: { select: { id: true, name: true, monthlyPrice: true } },
+        _count: { select: { comments: true, interactions: true } }, // Utile pour le frontend
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+  // nouvelle methodes 
 
   async findOne(id: string, user: UserWithRole) {
     const prospect = await this.prisma.prospect.findUnique({
