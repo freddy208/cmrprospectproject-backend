@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma.service';
 import { UserWithRole } from '../user/types';
 import { DashboardFilterDto } from './dto/dashboard-filter.dto';
 import { ProspectStatus } from '@prisma/client';
+import { getName } from 'country-list';
 
 @Injectable()
 export class DashboardService {
@@ -222,6 +223,7 @@ export class DashboardService {
       return {
         ...manager,
         country: cc.country,
+        countryName: getName(cc.country) || cc.country, // Utilisation de la bibliothèque
         prospectCount: cc._count.id,
       };
     });
