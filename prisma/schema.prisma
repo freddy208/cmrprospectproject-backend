@@ -124,7 +124,6 @@ model Interaction {
   id         String       @id @default(uuid())
   prospectId String
   userId     String
-  type       String?
   channel    LeadChannel?
   notes      String
   duration   Int?

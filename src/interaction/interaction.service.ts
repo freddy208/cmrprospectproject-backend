@@ -71,7 +71,6 @@ export class InteractionsService {
     if (filterDto.prospectId) where.prospectId = filterDto.prospectId;
     if (filterDto.userId) where.userId = filterDto.userId;
     if (filterDto.channel) where.channel = filterDto.channel;
-    if (filterDto.type) where.type = { contains: filterDto.type, mode: 'insensitive' };
     if (filterDto.notes) where.notes = { contains: filterDto.notes, mode: 'insensitive' };
 
     return this.prisma.interaction.findMany({

@@ -16,9 +16,5 @@ export class FilterInteractionDto {
 
   @IsString()
   @IsOptional()
-  type?: string;
-
-  @IsString()
-  @IsOptional()
   notes?: string;
 }

@@ -12,11 +12,6 @@ export class CreateInteractionDto {
   @IsString()
   @IsNotEmpty()
   prospectId: string; // toujours obligatoire
-
-  @IsString()
-  @IsOptional()
-  type?: string;
-
   @IsEnum(LeadChannel)
   @IsOptional()
   channel?: LeadChannel;
