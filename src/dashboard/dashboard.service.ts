@@ -219,13 +219,20 @@ export class DashboardService {
     });
 
     return countryCounts.map((cc) => {
-      const manager = managers.find((m) => m.country === cc.country);
-      return {
-        ...manager,
-        country: cc.country,
-        countryName: getName(cc.country) || cc.country, // Utilisation de la bibliothèque
-        prospectCount: cc._count.id,
-      };
-    });
+    // Trouver le manager du pays
+    const manager = managers.find(
+      (m) => m.country?.toLowerCase() === cc.country?.toLowerCase()
+    );
+
+    return {
+      id: manager?.id || `unknown-${cc.country}`,
+      firstName: manager?.firstName || 'Non',
+      lastName: manager?.lastName || 'spécifié',
+      country: cc.country,
+      countryName: getName(cc.country) || cc.country,
+      prospectCount: cc._count.id,
+    };
+  });
+
   }
 }
