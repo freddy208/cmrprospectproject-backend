@@ -1,8 +1,7 @@
 // src/user/dto/filter-user.dto.ts
-import { IsOptional, IsEnum, IsString } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsBoolean } from 'class-validator';
 import { Status } from '@prisma/client';
 
-// On n'a plus besoin de l'enum UserRole ici, on filtrera par nom de rôle si besoin
 export class FilterUserDto {
   @IsOptional()
   @IsString()
@@ -19,4 +18,25 @@ export class FilterUserDto {
   @IsOptional()
   @IsEnum(Status)
   status?: Status;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  // Nouveau champ pour le tri
+  @IsOptional()
+  @IsString()
+  sortBy?: 'createdAt' | 'lastLogin' | 'firstName' | 'lastName' | 'email';
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc';
+
+  @IsOptional()
+  @IsString()
+  limit?: string;
+
+  @IsOptional()
+  @IsString()
+  offset?: string;
 }

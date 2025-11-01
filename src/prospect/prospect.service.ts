@@ -69,6 +69,7 @@ export class ProspectService {
       ];
     }
     if (filter.country) where.country = filter.country;
+    if(filter.type) where.type = filter.type;
     if (filter.status) where.status = filter.status;
     if (filter.serviceType) where.serviceType = filter.serviceType;
     if (filter.leadChannel) where.leadChannel = filter.leadChannel;
@@ -88,7 +89,7 @@ export class ProspectService {
   }
   // nouvelle methodes 
   async findAllEntreprises(filter: FilterProspectDto, user: UserWithRole) {
-    const where: any = { genericType: 'ENTREPRISE', generecStatus: 'ACTIVE' };
+    const where: any = { type: 'ENTREPRISE', generecStatus: 'ACTIVE' };
 
     // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
     if (user.role.name === 'SALES_OFFICER') {
@@ -108,6 +109,7 @@ export class ProspectService {
       ];
     }
     if (filter.country) where.country = filter.country;
+    if(filter.type) where.type = filter.type;
     if (filter.status) where.status = filter.status;
     if (filter.serviceType) where.serviceType = filter.serviceType;
     if (filter.leadChannel) where.leadChannel = filter.leadChannel;
@@ -128,7 +130,7 @@ export class ProspectService {
   // nouvelle methodes 
    // nouvelle methodes 
   async findAllAboutis(filter: FilterProspectDto, user: UserWithRole) {
-    const where: any = { genericProspectStatus: 'CONVERTI', generecStatus: 'ACTIVE' };
+    const where: any = { status: 'CONVERTI', generecStatus: 'ACTIVE' };
 
     // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
     if (user.role.name === 'SALES_OFFICER') {
@@ -148,6 +150,7 @@ export class ProspectService {
       ];
     }
     if (filter.country) where.country = filter.country;
+    if(filter.type) where.type = filter.type;
     if (filter.status) where.status = filter.status;
     if (filter.serviceType) where.serviceType = filter.serviceType;
     if (filter.leadChannel) where.leadChannel = filter.leadChannel;
@@ -175,6 +178,7 @@ export class ProspectService {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         formation: true,
         simulateur: true,
+        _count: { select: { comments: true, interactions: true } }, // Utile pour le frontend
         comments: {
           where: { status: 'ACTIVE' },
           orderBy: { createdAt: 'desc' },

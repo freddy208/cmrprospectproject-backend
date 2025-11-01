@@ -60,7 +60,17 @@ export class UsersService {
 
   // Liste des utilisateurs avec filtres et recherche ET filtrage par rôle
   async findAll(filter: FilterUserDto, user: UserWithRole) { // <--- On utilise le nouveau type
-    const { search, role, country, status } = filter;
+    const { 
+      search, 
+      role, 
+      country, 
+      status, 
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      limit,
+      offset
+    } = filter;
 
     let whereClause: any = {};
 
@@ -73,7 +83,8 @@ export class UsersService {
       whereClause.id = user.id;
     }
 
-    return prisma.user.findMany({
+    // Construire les options de requête
+    const options: any = {
       where: {
         ...whereClause,
         AND: [
@@ -89,10 +100,26 @@ export class UsersService {
           role ? { role: { name: role } } : {},
           country ? { country } : {},
           status ? { status } : {},
+          isActive !== undefined ? { isActive } : {},
         ],
       },
-      orderBy: { createdAt: 'desc' },
-    });
+      orderBy: {
+        [sortBy]: sortOrder
+      },
+      include: {
+        role: true
+      }
+    };
+
+    // Ajouter la pagination si nécessaire
+    if (limit) {
+      options.take = parseInt(limit);
+    }
+    if (offset) {
+      options.skip = parseInt(offset);
+    }
+
+    return prisma.user.findMany(options);
   }
 
   // Récupérer un utilisateur par id, avec vérification des droits

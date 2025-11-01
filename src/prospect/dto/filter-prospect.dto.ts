@@ -1,5 +1,10 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { ProspectStatus, ServiceType, LeadChannel } from '@prisma/client';
+import {
+  ProspectStatus,
+  ServiceType,
+  LeadChannel,
+  ProspectType,
+} from '@prisma/client';
 
 export class FilterProspectDto {
   @IsOptional()
@@ -9,6 +14,10 @@ export class FilterProspectDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @IsOptional()
+  @IsString()
+  type?: ProspectType;
 
   @IsOptional()
   @IsEnum(ProspectStatus)
