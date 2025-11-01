@@ -49,7 +49,7 @@ export class ProspectService {
   }
 
   async findAll(filter: FilterProspectDto, user: UserWithRole) {
-    const where: any = { genericStatus: 'ACTIVE' };
+    const where: any = { type: 'PARTICULIER', genericStatus: 'ACTIVE' };
 
     // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
     if (user.role.name === 'SALES_OFFICER') {
