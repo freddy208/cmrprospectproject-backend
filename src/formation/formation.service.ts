@@ -98,7 +98,7 @@ export class FormationService {
   }
 
   async totalCount() {
-    return this.prisma.formation.count();
+    return { count: await this.prisma.formation.count() };
   }
 
   async countProspectsByFormation() {

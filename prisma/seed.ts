@@ -184,7 +184,7 @@ async function main() {
 
     // Sales Officer : Uniquement permissions de lecture/mise à jour/création sur ses propres données
     const soPermissions = allPermissions.filter(p => 
-      p.name.includes(':own') || p.name.includes('create') || p.name === 'dashboard:read'
+      p.name.includes(':own') || p.name.includes('create') || p.name === 'dashboard:read' || p.name.includes('read')
     );
     await prisma.role.update({
       where: { id: soRole.id },

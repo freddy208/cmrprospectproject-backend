@@ -112,7 +112,8 @@ export class SimulateurService {
   }
 
   async totalCount() {
-    return this.prisma.simulateur.count();
+    //return this.prisma.simulateur.count();
+    return { count: await this.prisma.simulateur.count() };
   }
 
   async countProspectsBySimulateur() {
