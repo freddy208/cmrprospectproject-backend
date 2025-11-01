@@ -89,7 +89,7 @@ export class ProspectService {
   }
   // nouvelle methodes 
   async findAllEntreprises(filter: FilterProspectDto, user: UserWithRole) {
-    const where: any = { type: 'ENTREPRISE', generecStatus: 'ACTIVE' };
+    const where: any = { type: 'ENTREPRISE', genericStatus: 'ACTIVE' };
 
     // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
     if (user.role.name === 'SALES_OFFICER') {
@@ -130,7 +130,7 @@ export class ProspectService {
   // nouvelle methodes 
    // nouvelle methodes 
   async findAllAboutis(filter: FilterProspectDto, user: UserWithRole) {
-    const where: any = { status: 'CONVERTI', generecStatus: 'ACTIVE' };
+    const where: any = { status: 'CONVERTI', genericStatus: 'ACTIVE' };
 
     // --- LOGIQUE DE FILTRAGE PAR RÔLE ---
     if (user.role.name === 'SALES_OFFICER') {
